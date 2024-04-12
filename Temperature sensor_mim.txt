@@ -1,0 +1,50 @@
+import time
+import threading
+
+temp = 25.0  # Global static float variable initiated with normal room temperature which is available inside the container before starts heating
+temp_has_to_be_fixed = None  # Variable to hold the desired temperature has to be fixed at the container
+
+def update_desired_temp():
+    global temp_has_to_be_fixed # Declaring the variable as global variable so that only we access inside the method 'temp_sensor()'
+    while True:
+        new_temp = input("Enter the new desired temperature (or type 'exit' to stop): ") # Enter the new temperature has to be fixed
+        if new_temp.lower() == 'exit': # When you don't need to update the temperature has to be fixed, you can simply type 'exit'
+            break
+        temp_has_to_be_fixed = float(new_temp)
+
+# Function to adjust the temperature towards the desired temperature that ha to be fixed in the container
+def temp_sensor():
+    global temp # The variable going to mimic the reading value of the temperature sensor
+    global temp_has_to_be_fixed # The variable going to mimic the temperature value that will be set to the container
+    while True:
+        if temp_has_to_be_fixed is not None:
+            # Calculate the difference between current temperature and desired temperature that we fixed in the container
+            temp_difference = temp_has_to_be_fixed - temp
+
+            # Determine the increment/decrement rate based on the temperature difference
+            if abs(temp_difference) > 10: # If the temperature difference is high, the increment/decrement rate will be high!
+              update_rate = 0.8  # High increment/decrement rate
+            elif abs(temp_difference) >5:
+              update_rate = 0.5
+            else: # If the temperature difference is low, the increment/decrement rate will be low! Especially, the scenario like in Petrol bunk!
+              update_rate = 0.25  # Low increment/decrement rate
+            # Calculate the time interval based on the temperature difference so that we can track the temperature inside the container often
+              time_interval = max(5, min(10, abs(temp_difference) * 2))  # Between 10 seconds to 20 seconds
+
+            # Adjust temperature towards the desired temperature
+            while abs(temp - temp_has_to_be_fixed) > 0.1:
+                if temp < temp_has_to_be_fixed:
+                    temp += update_rate 
+                else:
+                    temp -= update_rate
+
+                print(f"Current temperature: {temp:.2f}°C")
+                time.sleep(time_interval) # The timetaken by the container to get heatup/coolup towards the desired temperature at each cycles. 
+            temp_has_to_be_fixed = None
+
+# Creating and starting a separate thread to continuously check for updated desired temperature
+update_thread = threading.Thread(target=update_desired_temp)
+update_thread.start()
+
+# Executing the temperature adjustment function
+temp_sensor()
